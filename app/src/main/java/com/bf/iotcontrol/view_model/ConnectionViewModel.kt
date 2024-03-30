@@ -139,7 +139,7 @@ class ConnectionViewModel : ViewModel() {
                 } catch (e: IOException) {
                     socket.close()
                     currentClientSocket = null
-                    emit(ConnectionResult.Error("Connection was interrupted"))
+                    emit(ConnectionResult.Error(e.message ?: "Interrupt connection"))
                 }
             }
         }.onCompletion {

@@ -15,13 +15,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDevice
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
+import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
 import com.bf.iotcontrol.databinding.FragmentConnectionBinding
 import com.bf.iotcontrol.ui.matrix.ItemClickListener
 import com.bf.iotcontrol.view_model.ConnectionViewModel
 import com.bf.iotcontrol.view_model.PermissionListener
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.io.IOException
 
 @AndroidEntryPoint
@@ -77,7 +80,20 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     }
 
     override fun onClick(position: Int) {
-        viewModel.connectToDevice(list[position], requireContext())
+        val resultFlow = viewModel.connectToDevice(list[position], requireContext())
+        lifecycleScope.launch {
+            resultFlow.collect {
+                when (it) {
+                    is ConnectionResult.Error -> {
+                        Toast.makeText(this@ConnectionFragment.context, it.message, Toast.LENGTH_SHORT).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(this@ConnectionFragment.context, "Connect success", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     override fun requestPermission(permission: String) {
