@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -129,8 +130,14 @@ class ConnectionViewModel : ViewModel() {
             currentClientSocket = bluetoothAdapter
                 ?.getRemoteDevice(device.address)
                 ?.createRfcommSocketToServiceRecord(
-                    UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
+                    //Default UUID
+                    //UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
+
+                    //UUID for SSP connect device
+                    UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
                 )
+
+            Log.d("UUID", AndroidBluetoothController.SERVICE_UUID)
 
             currentClientSocket?.let { socket ->
                 try {
