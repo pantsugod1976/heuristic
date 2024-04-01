@@ -1,21 +1,21 @@
 package com.bf.iotcontrol.ui.device
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDevice
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
 import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
@@ -38,11 +38,14 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     private var list: List<BluetoothDeviceDomain> = emptyList()
     private lateinit var adapter: LinearAdapter
 
-    private val requestPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        if (it) {
-            viewModel.queryDevice(requireContext())
+    private val requestPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            if (it) {
+                viewModel.queryDevice(requireContext())
+            }
         }
-    }
+
+    private var socket: BluetoothSocket? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -77,6 +80,58 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
         } else {
             requestPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
         }
+
+        binding.btnDiscover.setOnClickListener {
+            val requestCode = 1;
+            val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
+                putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300)
+            }
+            startActivityForResult(discoverableIntent, requestCode)
+        }
+
+        binding.btnStart.setOnClickListener {
+            viewModel.acceptConnection()
+        }
+
+        binding.btnStop.setOnClickListener {
+            viewModel.stopConnection()
+        }
+
+        binding.control.apply {
+            btnDown.setOnClickListener {
+                controlDevice('D')
+            }
+
+            btnLeft.setOnClickListener {
+                controlDevice('L')
+            }
+
+            btnRight.setOnClickListener {
+                controlDevice('R')
+            }
+
+            btnUp.setOnClickListener {
+                controlDevice('U')
+            }
+        }
+    }
+
+    private fun controlDevice(ch: Char) {
+        val os = socket?.outputStream
+        os?.let {
+            try {
+                // Convert your data to bytes (e.g., if it's a String)
+                val dataBytes = ch.toString().toByteArray()
+
+                // Write data to the OutputStream
+                os.write(dataBytes)
+                os.flush() // Flush the OutputStream to ensure data is sent immediately
+                // Optionally, you can call os.close() to close the OutputStream after sending data
+            } catch (e: IOException) {
+                // Handle IOException
+                Toast.makeText(this.context, e.message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onClick(position: Int) {
@@ -85,11 +140,21 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
             resultFlow.collect {
                 when (it) {
                     is ConnectionResult.Error -> {
-                        Toast.makeText(this@ConnectionFragment.context, it.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@ConnectionFragment.context,
+                            it.message,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
 
                     else -> {
-                        Toast.makeText(this@ConnectionFragment.context, "Connect success", Toast.LENGTH_SHORT).show()
+                        viewModel.acceptConnection()
+                        findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
+                        Toast.makeText(
+                            this@ConnectionFragment.context,
+                            "Connect success",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -97,7 +162,11 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     }
 
     override fun requestPermission(permission: String) {
-        Toast.makeText(this.context, "App need your permission for function to work properly", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            this.context,
+            "App need your permission for function to work properly",
+            Toast.LENGTH_SHORT
+        ).show()
         requestPermission.launch(permission)
     }
 }

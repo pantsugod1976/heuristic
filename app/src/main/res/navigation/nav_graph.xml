@@ -9,5 +9,14 @@
         android:id="@+id/connectionFragment"
         android:name="com.bf.iotcontrol.ui.device.ConnectionFragment"
         android:label="fragment_connection"
-        tools:layout="@layout/fragment_connection" />
+        tools:layout="@layout/fragment_connection" >
+        <action
+            android:id="@+id/action_connectionFragment_to_matrixFragment"
+            app:destination="@id/matrixFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/matrixFragment"
+        android:name="com.bf.iotcontrol.ui.matrix.MatrixFragment"
+        android:label="fragment_matrix"
+        tools:layout="@layout/fragment_matrix" />
 </navigation>

@@ -131,7 +131,7 @@ class ConnectionViewModel : ViewModel() {
                 ?.getRemoteDevice(device.address)
                 ?.createRfcommSocketToServiceRecord(
                     //Default UUID
-                    //UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
+//                    UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
 
                     //UUID for SSP connect device
                     UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
@@ -149,8 +149,6 @@ class ConnectionViewModel : ViewModel() {
                     emit(ConnectionResult.Error(e.message ?: "Interrupt connection"))
                 }
             }
-        }.onCompletion {
-            closeConnection()
         }.flowOn(Dispatchers.IO)
     }
 
@@ -164,6 +162,11 @@ class ConnectionViewModel : ViewModel() {
         currentClientSocket = null
         currentServerSocket = null
     }
+
+    fun acceptConnection() = currentServerSocket?.accept()
+    fun stopConnection() = currentClientSocket?.close()
+
+    fun getSocket() = currentClientSocket
 
     fun release(context: Context) {
         context.unregisterReceiver(bluetoothStateReceiver)

@@ -8,5 +8,5 @@ enum class Attribute {
 }
 
 data class Model(
-    val attr: Attribute = Attribute.WAY
+    var attr: Attribute = Attribute.WAY
 )

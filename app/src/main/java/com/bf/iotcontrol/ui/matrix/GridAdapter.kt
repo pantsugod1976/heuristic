@@ -16,7 +16,7 @@ interface ItemClickListener {
 class GridAdapter(
     private val context: Context,
     private val span: Int,
-    private var images: List<Model>,
+    private var images: MutableList<Model>,
     private val listener: ItemClickListener
 ) : RecyclerView.Adapter<GridAdapter.ImageViewHolder>() {
 
@@ -34,10 +34,6 @@ class GridAdapter(
     }
 
     override fun getItemCount() = images.size
-
-    fun updateList(list: List<Model>) {
-        images = list
-    }
 
     inner class ImageViewHolder(private val binding: ItemLayoutBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -61,7 +57,12 @@ class GridAdapter(
             }
             binding.root.setBackgroundColor(colorRes)
             binding.root.setOnClickListener {
-                listener.onClick(position)
+                val old = images.indexOfFirst { it.attr == Attribute.GOAL }
+                images[old] = images[old].copy(attr = Attribute.WALL)
+                images[position] = images[position].copy(attr = Attribute.GOAL)
+
+                notifyItemChanged(old)
+                notifyItemChanged(position)
             }
         }
     }
