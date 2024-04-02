@@ -4,19 +4,88 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.matrix.MatrixFragment">
 
-    <data />
+    <data>
+        <variable
+            name="viewModel"
+            type="com.bf.iotcontrol.view_model.MatrixViewModel" />
+    </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:paddingHorizontal="10dp">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-            android:id="@+id/recycleView"
-            />
+            android:text="Heuristic"
+            android:textSize="18sp"
+            android:id="@+id/tvHeuristic"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textSize="18sp"
+            android:id="@+id/tvLocation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tvHeuristic"
+            app:layout_constraintStart_toStartOf="parent"
+            android:id="@+id/heuristicGroup"
+            >
+
+            <RadioButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manhattan"
+                android:id="@+id/manhattan"
+                android:checked="true"
+                android:onClick="@{(v) -> viewModel.setHeuristics(1)}"/>
+
+            <RadioButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Euclidean"
+                android:id="@+id/euclidean"
+                android:onClick="@{(v) -> viewModel.setHeuristics(2)}"/>
+
+            <RadioButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Octile"
+                android:id="@+id/octile"
+                android:onClick="@{(v) -> viewModel.setHeuristics(3)}"/>
+
+            <RadioButton
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chebyshev"
+                android:id="@+id/chebyshev"
+                android:onClick="@{(v) -> viewModel.setHeuristics(4)}"/>
+        </RadioGroup>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/heuristicGroup"
+            android:text="Start Algorithm"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:id="@+id/btnStart" />
+
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tvLocation"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:id="@+id/spinner"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -30,7 +31,7 @@ import java.io.IOException
 @AndroidEntryPoint
 class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     private lateinit var binding: FragmentConnectionBinding
-    private val viewModel: ConnectionViewModel by viewModels()
+    private val viewModel: ConnectionViewModel by activityViewModels()
 
     private val bluetoothManager by lazy { requireContext().getSystemService(BluetoothManager::class.java) }
     private val bluetoothAdapter by lazy { bluetoothManager.adapter }
