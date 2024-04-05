@@ -1,5 +1,6 @@
 package com.bf.iotcontrol.view_model
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.bf.iotcontrol.algorithm.AStar
@@ -7,7 +8,7 @@ import com.bf.iotcontrol.algorithm.Node
 
 sealed class ResultPathFinding {
     data object Error : ResultPathFinding()
-    class Success(path: List<Pair<Int, Int>>): ResultPathFinding()
+    class Success(val path: List<Pair<Int, Int>>): ResultPathFinding()
 }
 
 class MatrixViewModel : ViewModel() {
@@ -29,7 +30,8 @@ class MatrixViewModel : ViewModel() {
         listOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     )
 
-    private val liveResult = MutableLiveData<ResultPathFinding>()
+    private val _liveResult = MutableLiveData<ResultPathFinding>()
+    val liveResult: LiveData<ResultPathFinding> get() = _liveResult
 
     private val aviNode = mutableListOf<String>()
     private var nodeMatrix: List<List<Node>> = listOf()
@@ -75,7 +77,7 @@ class MatrixViewModel : ViewModel() {
         val goalNode = nodeMatrix[location.first().toInt()][location.last().toInt()]
         val isFound = algorithm.computeShortestPath(startNode, goalNode)
         if (isFound) {
-            algorithm.showPath(startNode, goalNode)
-        }
+            _liveResult.postValue(ResultPathFinding.Success(algorithm.showPath(startNode, goalNode)))
+        } else _liveResult.postValue(ResultPathFinding.Error)
     }
 }

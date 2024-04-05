@@ -149,7 +149,7 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
                     }
 
                     else -> {
-                        viewModel.acceptConnection()
+//                        viewModel.acceptConnection()
                         findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
                         Toast.makeText(
                             this@ConnectionFragment.context,
