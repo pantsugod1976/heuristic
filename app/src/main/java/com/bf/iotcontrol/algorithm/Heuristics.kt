@@ -1,12 +1,13 @@
 package com.bf.iotcontrol.algorithm
 
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
 
 class Heuristics {
     companion object {
         fun manhattan(dx: Double, dy: Double): Double {
-            return dx + dy
+            return abs(dx) + abs(dy)
         }
 
         fun euclidean(dx: Double, dy: Double): Double {

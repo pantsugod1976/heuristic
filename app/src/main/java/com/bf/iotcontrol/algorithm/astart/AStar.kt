@@ -1,9 +1,10 @@
-package com.bf.iotcontrol.algorithm
+package com.bf.iotcontrol.algorithm.astart
 
+import com.bf.iotcontrol.algorithm.Heuristics
+import com.bf.iotcontrol.algorithm.Node
 import java.util.PriorityQueue
-import kotlin.math.abs
 
-class AStar(private val stateMatrix: List<List<Node>>, private val heuristics: Int) {
+class AStar(private val stateMatrix: List<List<Node>>) {
     private val open: PriorityQueue<Node> = PriorityQueue(compareBy { it.f })
     private val closed: MutableSet<Node> = HashSet()
 
@@ -80,27 +81,7 @@ class AStar(private val stateMatrix: List<List<Node>>, private val heuristics: I
         // In this example, I'll just return a simple Manhattan distance estimate
         val dx = (state.row - goal.row).toDouble()
         val dy = (state.col - goal.col).toDouble()
-        return when (heuristics) {
-            1 -> {
-                Heuristics.manhattan(dx, dy)
-            }
-
-            2 -> {
-                Heuristics.euclidean(dx, dy)
-            }
-
-            3 -> {
-                Heuristics.octile(dx, dy)
-            }
-
-            4 -> {
-                Heuristics.chebyshev(dx, dy)
-            }
-
-            else -> {
-                Heuristics.manhattan(dx, dy)
-            }
-        }
+        return Heuristics.manhattan(dx, dy)
     }
 
     private fun isValidCell(row: Int, col: Int): Boolean {

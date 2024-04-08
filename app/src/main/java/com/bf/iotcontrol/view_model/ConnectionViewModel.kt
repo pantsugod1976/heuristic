@@ -54,7 +54,7 @@ class ConnectionViewModel : ViewModel() {
         get() = _errors.asSharedFlow()
 
     private var currentServerSocket: BluetoothServerSocket? = null
-    private var currentClientSocket: BluetoothSocket? = null
+    var currentClientSocket: BluetoothSocket? = null
 
     @SuppressLint("MissingPermission")
     private val bluetoothStateReceiver = BluetoothStateReceiver { isConnected, bluetoothDevice ->
@@ -163,7 +163,10 @@ class ConnectionViewModel : ViewModel() {
         currentServerSocket = null
     }
 
-    fun acceptConnection() = currentServerSocket?.accept()
+    fun acceptConnection(){
+        currentServerSocket?.accept()
+
+    }
     fun stopConnection() = currentClientSocket?.close()
 
     fun getSocket() = currentClientSocket

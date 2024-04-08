@@ -66,22 +66,25 @@ class MatrixFragment : Fragment() {
             if (it is ResultPathFinding.Success) {
                 var start = it.path.first()
                 val list = it.path.drop(1)
-                socket = connectionViewModel.acceptConnection()
+//                socket = connectionViewModel.acceptConnection()
                 list.forEach {node ->
                     if (start.first == node.first) {
-                        val ch = if (start.second < node.second) 'R'
-                        else 'L'
+                        val ch = if (start.second < node.second) '1'
+                        else '0'
                         controlDevice(ch)
                     } else {
-                        val ch = if (start.first < node.first) 'U'
+                        val ch = if (start.first < node.first) 'S'
                         else 'D'
                         controlDevice(ch)
                     }
-
                     start = node
                 }
+
+                controlDevice('S')
             }
         }
+
+
     }
 
     private fun controlDevice(ch: Char) {

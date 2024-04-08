@@ -3,8 +3,11 @@ package com.bf.iotcontrol.view_model
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.bf.iotcontrol.algorithm.AStar
+import com.bf.iotcontrol.algorithm.astart.AStar
 import com.bf.iotcontrol.algorithm.Node
+import com.bf.iotcontrol.algorithm.ara.AnytimeAStar
+import com.bf.iotcontrol.algorithm.dstart.DStar
+import com.bf.iotcontrol.algorithm.dynamic_a_start.DynamicAStart
 
 sealed class ResultPathFinding {
     data object Error : ResultPathFinding()
@@ -34,12 +37,11 @@ class MatrixViewModel : ViewModel() {
     val liveResult: LiveData<ResultPathFinding> get() = _liveResult
 
     private val aviNode = mutableListOf<String>()
-    private var nodeMatrix: List<List<Node>> = listOf()
 
-    private var heuristics: Int = 1
+    private var algorithms: Int = 1
     private var goalLocation = "6, 0"
 
-    private fun createStateMatrix(matrix: List<List<Int>>): List<List<Node>> {
+    fun createStateMatrix(matrix: List<List<Int>>): List<List<Node>> {
         return matrix.mapIndexed { rowIndex, row ->
             row.mapIndexed { colIndex, value ->
                 Node(rowIndex, colIndex, value == 1)
@@ -47,8 +49,8 @@ class MatrixViewModel : ViewModel() {
         }
     }
 
-    fun setHeuristics(choice: Int) {
-        heuristics = choice
+    fun setAlgorithms(choice: Int) {
+        algorithms = choice
     }
 
     fun setGoalLocation(pos: Int) {
@@ -56,7 +58,7 @@ class MatrixViewModel : ViewModel() {
     }
 
     fun getAvailableLocation(): MutableList<String> {
-        nodeMatrix = createStateMatrix(matrix)
+        val nodeMatrix = createStateMatrix(matrix)
         nodeMatrix.forEach { list ->
             val slice = list.partition { it.isWall }
             aviNode.addAll(slice.second.map { it.getDirection() })
@@ -66,18 +68,103 @@ class MatrixViewModel : ViewModel() {
     }
 
     fun startAlgorithm() {
-        val algorithm = AStar(nodeMatrix, heuristics)
-        val startNode = nodeMatrix[6][0]
+        when (algorithms) {
+            1 -> {
+                startAStart()
+            }
+
+            2 -> {
+                startDStar()
+            }
+
+            3 -> {
+                startAnytimeAStart()
+            }
+
+            else -> {
+                startAD()
+            }
+        }
+    }
+
+    private fun startAStart() {
+        val copyMatrix = createStateMatrix(matrix)
+        val algorithm = AStar(copyMatrix)
+        val startNode = copyMatrix[6][0]
         val location = goalLocation.split(", ").toMutableList()
         location.forEach {
             it.apply {
                 this.replace("(", "")
             }
         }
-        val goalNode = nodeMatrix[location.first().toInt()][location.last().toInt()]
+        val goalNode = copyMatrix[location.first().toInt()][location.last().toInt()]
         val isFound = algorithm.computeShortestPath(startNode, goalNode)
         if (isFound) {
             _liveResult.postValue(ResultPathFinding.Success(algorithm.showPath(startNode, goalNode)))
+        } else _liveResult.postValue(ResultPathFinding.Error)
+    }
+
+    private fun startAnytimeAStart() {
+        val copyMatrix = createStateMatrix(matrix)
+        val algorithm = AnytimeAStar(copyMatrix)
+        val startNode = copyMatrix[6][0]
+        val location = goalLocation.split(", ").toMutableList()
+        location.forEach {
+            it.apply {
+                this.replace("(", "")
+            }
+        }
+        val goalNode = copyMatrix[location.first().toInt()][location.last().toInt()]
+
+        val pathToLocation = algorithm.findPath(startNode, goalNode)
+
+        if (pathToLocation.isNotEmpty()) {
+            val pairList = pathToLocation.map {
+                Pair(it.row, it.col)
+            }
+            _liveResult.postValue(ResultPathFinding.Success(pairList))
+        } else _liveResult.postValue(ResultPathFinding.Error)
+    }
+
+    private fun startDStar() {
+        val copyMatrix = createStateMatrix(matrix)
+        val algorithm = DStar(copyMatrix)
+
+        val startNode = copyMatrix[6][0]
+        val location = goalLocation.split(", ").toMutableList()
+        location.forEach {
+            it.apply {
+                this.replace("(", "")
+            }
+        }
+        val goalNode = copyMatrix[location.first().toInt()][location.last().toInt()]
+        val pathToLocation = algorithm.findPath(startNode, goalNode)
+        if (pathToLocation.isNotEmpty()) {
+            val pairList = pathToLocation.map {
+                Pair(it.row, it.col)
+            }
+            _liveResult.postValue(ResultPathFinding.Success(pairList))
+        } else _liveResult.postValue(ResultPathFinding.Error)
+    }
+
+    private fun startAD() {
+        val copyMatrix = createStateMatrix(matrix)
+        val algorithm = DynamicAStart(copyMatrix)
+
+        val startNode = copyMatrix[6][0]
+        val location = goalLocation.split(", ").toMutableList()
+        location.forEach {
+            it.apply {
+                this.replace("(", "")
+            }
+        }
+        val goalNode = copyMatrix[location.first().toInt()][location.last().toInt()]
+        val pathToLocation = algorithm.findPath(startNode, goalNode)
+        if (pathToLocation.isNotEmpty()) {
+            val pairList = pathToLocation.map {
+                Pair(it.row, it.col)
+            }
+            _liveResult.postValue(ResultPathFinding.Success(pairList))
         } else _liveResult.postValue(ResultPathFinding.Error)
     }
 }

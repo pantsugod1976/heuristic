@@ -14,30 +14,34 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDevice
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
 import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
 import com.bf.iotcontrol.databinding.FragmentConnectionBinding
 import com.bf.iotcontrol.ui.matrix.ItemClickListener
+import com.bf.iotcontrol.view_model.BluetoothConnection
 import com.bf.iotcontrol.view_model.ConnectionViewModel
 import com.bf.iotcontrol.view_model.PermissionListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.IOException
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     private lateinit var binding: FragmentConnectionBinding
     private val viewModel: ConnectionViewModel by activityViewModels()
 
+
     private val bluetoothManager by lazy { requireContext().getSystemService(BluetoothManager::class.java) }
     private val bluetoothAdapter by lazy { bluetoothManager.adapter }
 
     private var list: List<BluetoothDeviceDomain> = emptyList()
     private lateinit var adapter: LinearAdapter
+
+    @Inject
+    lateinit var obj: BluetoothConnection
 
     private val requestPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -95,6 +99,7 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
         }
 
         binding.btnStop.setOnClickListener {
+            controlDevice('S')
             viewModel.stopConnection()
         }
 
@@ -114,6 +119,7 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
             btnUp.setOnClickListener {
                 controlDevice('U')
             }
+
         }
     }
 
@@ -149,8 +155,8 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
                     }
 
                     else -> {
-//                        viewModel.acceptConnection()
-                        findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
+                        viewModel.acceptConnection()
+                        // findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
                         Toast.makeText(
                             this@ConnectionFragment.context,
                             "Connect success",
