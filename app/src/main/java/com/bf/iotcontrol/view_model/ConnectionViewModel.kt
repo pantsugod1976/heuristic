@@ -16,6 +16,8 @@ import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
 import com.bf.iotcontrol.bluetooth_controller.BluetoothStateReceiver
 import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
 import com.bf.iotcontrol.bluetooth_controller.toBluetoothDeviceDomain
+import com.bf.iotcontrol.ui.matrix.GridAdapter
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,147 +34,38 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.UUID
+import javax.inject.Inject
 
 interface PermissionListener {
     fun requestPermission(permission: String)
 }
 
-class ConnectionViewModel : ViewModel() {
+@HiltViewModel
+class ConnectionViewModel @Inject constructor(
+    private val bluetoothConnection: BluetoothConnection
+) : ViewModel() {
     private val _pairedList = MutableLiveData<List<BluetoothDeviceDomain>>()
     val pairedList: LiveData<List<BluetoothDeviceDomain>> = _pairedList
 
-    private var listener: PermissionListener? = null
-
-    private var bluetoothAdapter: BluetoothAdapter? = null
-
-    private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean>
-        get() = _isConnected.asStateFlow()
-
-    private val _errors = MutableSharedFlow<String>()
-    val errors: SharedFlow<String>
-        get() = _errors.asSharedFlow()
-
-    private var currentServerSocket: BluetoothServerSocket? = null
-    var currentClientSocket: BluetoothSocket? = null
-
-    @SuppressLint("MissingPermission")
-    private val bluetoothStateReceiver = BluetoothStateReceiver { isConnected, bluetoothDevice ->
-        if (bluetoothAdapter?.bondedDevices?.contains(bluetoothDevice) == true) {
-            _isConnected.update { isConnected }
-        } else {
-            CoroutineScope(Dispatchers.IO).launch {
-                _errors.emit("Can't connect to a non-paired device.")
-            }
-        }
+    fun setupVariable(bluetoothAdapter: BluetoothAdapter) {
+        bluetoothConnection.setupAdapter(bluetoothAdapter)
     }
-
-    fun setupVariable(bluetoothAdapter: BluetoothAdapter, permissionListener: PermissionListener) {
-        this.bluetoothAdapter = bluetoothAdapter
-        listener = permissionListener
-    }
-
-    @SuppressLint("MissingPermission")
     fun queryDevice(context: Context) {
-        if (!hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)) {
-            listener?.requestPermission(Manifest.permission.BLUETOOTH_CONNECT)
-            return
-        }
-        val list = bluetoothAdapter?.bondedDevices
-            ?.map { it.toBluetoothDeviceDomain() }
-        _pairedList.postValue(list!!)
+        val list = bluetoothConnection.queryDevice(context)
+        _pairedList.postValue(list)
     }
 
-    @SuppressLint("MissingPermission")
-    fun startBluetoothServer(
-        context: Context
-    ): Flow<ConnectionResult> {
-        return flow {
-            if (!hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)) {
-                listener?.requestPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                throw SecurityException("No BLUETOOTH_CONNECT permission")
-            }
-
-            currentServerSocket = bluetoothAdapter?.listenUsingRfcommWithServiceRecord(
-                "chat_service",
-                UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
-            )
-
-            var shouldLoop = true
-            while (shouldLoop) {
-                currentClientSocket = try {
-                    currentServerSocket?.accept()
-                } catch (e: IOException) {
-                    shouldLoop = false
-                    null
-                }
-                emit(ConnectionResult.ConnectionEstablished)
-                currentClientSocket?.let {
-                    currentServerSocket?.close()
-                }
-            }
-        }.onCompletion {
-            closeConnection()
-        }.flowOn(Dispatchers.IO)
+    fun acceptConnection() {
+        bluetoothConnection.acceptConnection()
     }
 
-    @SuppressLint("MissingPermission")
-    fun connectToDevice(
-        device: BluetoothDeviceDomain,
-        context: Context
-    ): Flow<ConnectionResult> {
-        return flow {
-            if (!hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)) {
-                listener?.requestPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                throw SecurityException("No BLUETOOTH_CONNECT permission")
-            }
-
-            currentClientSocket = bluetoothAdapter
-                ?.getRemoteDevice(device.address)
-                ?.createRfcommSocketToServiceRecord(
-                    //Default UUID
-//                    UUID.fromString(AndroidBluetoothController.SERVICE_UUID)
-
-                    //UUID for SSP connect device
-                    UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-                )
-
-            Log.d("UUID", AndroidBluetoothController.SERVICE_UUID)
-
-            currentClientSocket?.let { socket ->
-                try {
-                    socket.connect()
-                    emit(ConnectionResult.ConnectionEstablished)
-                } catch (e: IOException) {
-                    socket.close()
-                    currentClientSocket = null
-                    emit(ConnectionResult.Error(e.message ?: "Interrupt connection"))
-                }
-            }
-        }.flowOn(Dispatchers.IO)
+    fun stopConnection() {
+        bluetoothConnection.stopConnection()
     }
 
-    private fun hasPermission(context: Context, permission: String): Boolean {
-        return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+    fun changeListener(listener: PermissionListener) {
+        bluetoothConnection.setupListener(listener)
     }
 
-    private fun closeConnection() {
-        currentClientSocket?.close()
-        currentServerSocket?.close()
-        currentClientSocket = null
-        currentServerSocket = null
-    }
-
-    fun acceptConnection(){
-        currentServerSocket?.accept()
-
-    }
-    fun stopConnection() = currentClientSocket?.close()
-
-    fun getSocket() = currentClientSocket
-
-    fun release(context: Context) {
-        context.unregisterReceiver(bluetoothStateReceiver)
-        closeConnection()
-    }
+    fun connectToDevice(bluetoothDevice: BluetoothDeviceDomain, context: Context): Flow<ConnectionResult> = bluetoothConnection.connectToDevice(bluetoothDevice, context)
 }

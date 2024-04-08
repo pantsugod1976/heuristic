@@ -27,6 +27,11 @@ class Node(val row: Int, val col: Int, var isWall: Boolean) {
         }
     }
 
+    //path visualize
+    var isVisited = false
+    var isStart = false
+    var isGoal = false
+
     companion object {
         var epsilon = 1.0
     }

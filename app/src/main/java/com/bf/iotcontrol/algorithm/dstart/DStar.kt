@@ -4,7 +4,6 @@ import android.util.Log
 import com.bf.iotcontrol.algorithm.Heuristics
 import com.bf.iotcontrol.algorithm.Node
 import com.bf.iotcontrol.algorithm.NodeComparator
-import kotlinx.coroutines.delay
 import java.util.PriorityQueue
 import kotlin.math.min
 
@@ -31,7 +30,52 @@ class DStar(
         return row in matrix.indices && col in matrix[row].indices
     }
 
+    private fun getNeighbors(node: Node): PriorityQueue<Node> {
+        val neighbors = PriorityQueue<Node>(Comparator { o1, o2 ->
+            if((o1.g + 1) < (o2.g + 1)) return@Comparator -1 else return@Comparator 1 })
+        for (rowOffset in -1..1) {
+            val colOffset = 0
+            if (rowOffset == 0) continue // Skip current cell
+            val newRow = node.row + rowOffset
+            val newCol = node.col + colOffset
+
+            if (isValidCell(newRow, newCol)) {
+                val neighbor = matrix[newRow][newCol]
+                if (neighbor.isWall) continue
+                neighbors.add(neighbor)
+            }
+        }
+
+        for (colOffset in -1..1) {
+            val rowOffset = 0
+            if (colOffset == 0) continue // Skip current cell
+            val newRow = node.row + rowOffset
+            val newCol = node.col + colOffset
+
+            if (isValidCell(newRow, newCol)) {
+                val neighbor = matrix[newRow][newCol]
+                if (neighbor.isWall) continue
+                neighbors.add(neighbor)
+            }
+        }
+        return neighbors
+    }
+
+    private fun updateKey() {
+        val altOpen = mutableListOf<Node>()
+        altOpen.addAll(open)
+//        altOpen.forEach {node ->
+//            node.key1 = min(node.g, node.rhs) + node.h
+//            node.key2 = min(node.g, node.rhs)
+//        }
+
+        open.clear()
+        open.addAll(altOpen)
+    }
+
     private fun updateState(node: Node) {
+        if (!node.isVisited) node.g = Double.MAX_VALUE
+
         if (node != goal) {
             node.rhs = getNeighbors(node).peek().g + 1
         }
@@ -47,51 +91,26 @@ class DStar(
 
     private fun computeShortPath(): Boolean {
         while (open.peek().compareKey(start) == -1 || start.g != start.rhs) {
-            val current = open.peek()
-            open.poll()
+            val current = open.poll()
+            current.isVisited = true
 
             if (current == start) return false
 
+            val neightbors = getNeighbors(current)
+
             if (current.g > current.rhs) {
                 current.g = current.rhs
-
-                for (rowOffset in -1..1) {
-                    for (colOffset in -1..1) {
-                        if (rowOffset == 0 && colOffset == 0) continue // Skip current cell
-                        val newRow = current.row + rowOffset
-                        val newCol = current.col + colOffset
-
-                        if (isValidCell(newRow, newCol)) {
-                            val neighbor = matrix[newRow][newCol]
-                            if (neighbor in close || neighbor.isWall) continue
-
-                            updateState(neighbor)
-                        }
-                    }
-                }
             } else {
                 current.g = Double.MAX_VALUE
                 updateState(current)
-                for (rowOffset in -1..1) {
-                    for (colOffset in -1..1) {
-                        if (rowOffset == 0 && colOffset == 0) continue // Skip current cell
-                        val newRow = current.row + rowOffset
-                        val newCol = current.col + colOffset
-
-                        if (isValidCell(newRow, newCol)) {
-                            val neighbor = matrix[newRow][newCol]
-                            if (neighbor in close || neighbor.isWall) continue
-
-                            updateState(neighbor)
-                        }
-                    }
-                }
             }
 
-            open.peek().predecessors.apply {
-                clear()
-                add(current)
+            neightbors.forEach {
+                updateState(it)
             }
+
+            updateKey()
+
             close.add(current)
 
             return true
@@ -115,8 +134,11 @@ class DStar(
 
         matrix.forEach {
             it.all { node ->
-                if (!node.isWall && node != start) {
-                    node.h = heuristic(start, node)
+                node.h = heuristic(start, node)
+                if (!node.isWall && node != goal && node != start) {
+                    node.g = 0.0
+                    node.key1 = min(node.g, node.rhs) + node.h
+                    node.key2 = min(node.g, node.rhs)
                 }
                 true
             }
@@ -146,23 +168,5 @@ class DStar(
             if (curPre.isNotEmpty()) path.add(curPre.first())
         }
         return path
-    }
-
-    private fun getNeighbors(node: Node): PriorityQueue<Node> {
-        val neighbors = PriorityQueue(NodeComparator())
-        for (rowOffset in -1..1) {
-            for (colOffset in -1..1) {
-                if (rowOffset == 0 && colOffset == 0) continue // Skip current cell
-                val newRow = node.row + rowOffset
-                val newCol = node.col + colOffset
-
-                if (isValidCell(newRow, newCol)) {
-                    val neighbor = matrix[newRow][newCol]
-                    if (neighbor.isWall || neighbor == goal || neighbor in close) continue
-                    neighbors.add(neighbor)
-                }
-            }
-        }
-        return neighbors
     }
 }

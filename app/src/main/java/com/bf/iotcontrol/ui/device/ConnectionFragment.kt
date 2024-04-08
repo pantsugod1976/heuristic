@@ -2,7 +2,6 @@ package com.bf.iotcontrol.ui.device
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,35 +12,28 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDevice
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
 import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
 import com.bf.iotcontrol.databinding.FragmentConnectionBinding
 import com.bf.iotcontrol.ui.matrix.ItemClickListener
-import com.bf.iotcontrol.view_model.BluetoothConnection
 import com.bf.iotcontrol.view_model.ConnectionViewModel
 import com.bf.iotcontrol.view_model.PermissionListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.IOException
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     private lateinit var binding: FragmentConnectionBinding
-    private val viewModel: ConnectionViewModel by activityViewModels()
-
-
-    private val bluetoothManager by lazy { requireContext().getSystemService(BluetoothManager::class.java) }
-    private val bluetoothAdapter by lazy { bluetoothManager.adapter }
+    private val viewModel: ConnectionViewModel by viewModels()
 
     private var list: List<BluetoothDeviceDomain> = emptyList()
     private lateinit var adapter: LinearAdapter
 
-    @Inject
-    lateinit var obj: BluetoothConnection
+    private var socket: BluetoothSocket? = null
 
     private val requestPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -49,8 +41,6 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
                 viewModel.queryDevice(requireContext())
             }
         }
-
-    private var socket: BluetoothSocket? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -64,7 +54,7 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.setupVariable(bluetoothAdapter, this)
+        viewModel.changeListener(this)
 
         val devices = listOf<BluetoothDevice>()
         adapter = LinearAdapter(devices, this)
@@ -87,7 +77,7 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
         }
 
         binding.btnDiscover.setOnClickListener {
-            val requestCode = 1;
+            val requestCode = 1
             val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
                 putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300)
             }

@@ -22,8 +22,20 @@ class ItemAdapter(
     inner class ViewHolder(private val binding: ItemLayoutBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(position: Int) {
+            val color =
+                if (list[position].isWall) context.resources.getColor(R.color.gray, null)
+                else if (list[position].isVisited) context.resources.getColor(R.color.yellow, null)
+                else if (list[position].isStart) context.resources.getColor(R.color.green, null)
+                else if (list[position].isGoal) context.resources.getColor(R.color.red, null)
+                else context.resources.getColor(R.color.white, null)
 
+            binding.root.setBackgroundColor(color)
         }
+    }
+
+    fun changeList(new: Node, position: Int) {
+        list.toMutableList()[position] = new
+        this.notifyItemChanged(position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -35,7 +47,13 @@ class ItemAdapter(
     override fun getItemCount(): Int = list.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        TODO("Not yet implemented")
+        val width = context.resources.displayMetrics.widthPixels / 15
+        holder.itemView.layoutParams.apply {
+            this.width = width
+            this.height = width
+        }
+
+        holder.bind(position)
     }
 }
 
@@ -58,13 +76,20 @@ class GridAdapter(
         holder.bind(position)
     }
 
+    fun changeData(new: Node, row: Int, col: Int) {
+        adapters[row].changeList(new, col)
+    }
+
     override fun getItemCount() = images.size
 
     inner class ImageViewHolder(private val binding: ItemRecycleLayoutBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(position: Int) {
             val adapter = ItemAdapter(context, images[position])
-            adapters.add
+            adapters.add(adapter)
+
+            binding.recycleView.setHasFixedSize(true)
+            binding.recycleView.adapter = adapter
         }
     }
 }

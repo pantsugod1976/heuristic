@@ -3,11 +3,13 @@ package com.bf.iotcontrol.view_model
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.bf.iotcontrol.algorithm.astart.AStar
 import com.bf.iotcontrol.algorithm.Node
 import com.bf.iotcontrol.algorithm.ara.AnytimeAStar
 import com.bf.iotcontrol.algorithm.dstart.DStar
 import com.bf.iotcontrol.algorithm.dynamic_a_start.DynamicAStart
+import kotlinx.coroutines.launch
 
 sealed class ResultPathFinding {
     data object Error : ResultPathFinding()
@@ -15,13 +17,14 @@ sealed class ResultPathFinding {
 }
 
 class MatrixViewModel : ViewModel() {
+    //4-8 3-10 5-10
     val matrix = listOf(
         listOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
         listOf(1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1),
         listOf(1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1),
-        listOf(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1),
-        listOf(1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1),
-        listOf(1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+        listOf(1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1),
+        listOf(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1),
+        listOf(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
         listOf(0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1),
         listOf(1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1),
         listOf(1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1),
@@ -68,26 +71,28 @@ class MatrixViewModel : ViewModel() {
     }
 
     fun startAlgorithm() {
-        when (algorithms) {
-            1 -> {
-                startAStart()
-            }
+        viewModelScope.launch {
+            when (algorithms) {
+                1 -> {
+                    startAStart()
+                }
 
-            2 -> {
-                startDStar()
-            }
+                2 -> {
+                    startDStar()
+                }
 
-            3 -> {
-                startAnytimeAStart()
-            }
+                3 -> {
+                    startAnytimeAStart()
+                }
 
-            else -> {
-                startAD()
+                else -> {
+                    startAD()
+                }
             }
         }
     }
 
-    private fun startAStart() {
+    private suspend fun startAStart() {
         val copyMatrix = createStateMatrix(matrix)
         val algorithm = AStar(copyMatrix)
         val startNode = copyMatrix[6][0]
@@ -104,7 +109,7 @@ class MatrixViewModel : ViewModel() {
         } else _liveResult.postValue(ResultPathFinding.Error)
     }
 
-    private fun startAnytimeAStart() {
+    private suspend fun startAnytimeAStart() {
         val copyMatrix = createStateMatrix(matrix)
         val algorithm = AnytimeAStar(copyMatrix)
         val startNode = copyMatrix[6][0]
@@ -126,7 +131,7 @@ class MatrixViewModel : ViewModel() {
         } else _liveResult.postValue(ResultPathFinding.Error)
     }
 
-    private fun startDStar() {
+    private suspend fun startDStar() {
         val copyMatrix = createStateMatrix(matrix)
         val algorithm = DStar(copyMatrix)
 
@@ -147,7 +152,7 @@ class MatrixViewModel : ViewModel() {
         } else _liveResult.postValue(ResultPathFinding.Error)
     }
 
-    private fun startAD() {
+    private suspend fun startAD() {
         val copyMatrix = createStateMatrix(matrix)
         val algorithm = DynamicAStart(copyMatrix)
 
