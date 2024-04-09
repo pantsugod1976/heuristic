@@ -27,6 +27,7 @@ import com.bf.iotcontrol.view_model.ResultPathFinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import kotlin.math.sqrt
 
@@ -91,26 +92,28 @@ class MatrixFragment : Fragment() {
                 connectionViewModel.acceptConnection()
                 socket = connectionViewModel.clientSocket()
                 var current = start
-                list.forEach { node ->
-                    //control
-                    if (current.first == node.first) {
-                        val ch = if (current.second < node.second) 'R'
-                       else 'L'
-                       controlDevice(ch)
-                   } else {
-                       val ch = if (current.first < current.first) 'F'
-                       else 'B'
-                        controlDevice(ch)
-                   }
+                lifecycleScope.launch {
+                    for (node in list) {
+                        delay(5000)
+                        //control
+                        if (current.first == node.first) {
+                            val ch = if (current.second < node.second) 'R'
+                            else 'L'
+                            controlDevice(ch)
+                        } else {
+                            val ch = if (current.first < current.first) 'F'
+                            else 'B'
+                            controlDevice(ch)
+                        }
 
-                    current = node
+                        current = node
 
-                    //visualize
-                    val item = recycleMatrix[node.first][node.second]
-                    item.isVisited = true
-                    Handler(Looper.getMainLooper()).postDelayed({
+                        //visualize
+                        val item = recycleMatrix[node.first][node.second]
+                        item.isVisited = true
                         matrixAdapter.changeData(item, item.row, item.col)
-                    }, 1000)
+                    }
+                    controlDevice('S')
                 }
                 controlDevice('S')
             }
