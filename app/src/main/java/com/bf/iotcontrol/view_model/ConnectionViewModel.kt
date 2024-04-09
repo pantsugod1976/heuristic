@@ -67,5 +67,7 @@ class ConnectionViewModel @Inject constructor(
         bluetoothConnection.setupListener(listener)
     }
 
+    fun clientSocket() = bluetoothConnection.getCurrentClientSocket()
+
     fun connectToDevice(bluetoothDevice: BluetoothDeviceDomain, context: Context): Flow<ConnectionResult> = bluetoothConnection.connectToDevice(bluetoothDevice, context)
 }

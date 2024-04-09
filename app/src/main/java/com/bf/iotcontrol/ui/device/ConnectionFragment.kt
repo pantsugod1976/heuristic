@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDevice
 import com.bf.iotcontrol.bluetooth_controller.BluetoothDeviceDomain
 import com.bf.iotcontrol.bluetooth_controller.ConnectionResult
@@ -145,8 +146,9 @@ class ConnectionFragment : Fragment(), ItemClickListener, PermissionListener {
                     }
 
                     else -> {
-                        viewModel.acceptConnection()
-                        // findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
+                        //viewModel.acceptConnection()
+                        //socket = viewModel.clientSocket()
+                        findNavController().navigate(ConnectionFragmentDirections.actionConnectionFragmentToMatrixFragment())
                         Toast.makeText(
                             this@ConnectionFragment.context,
                             "Connect success",

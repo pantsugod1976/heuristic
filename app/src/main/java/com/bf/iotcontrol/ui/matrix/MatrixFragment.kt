@@ -24,11 +24,13 @@ import com.bf.iotcontrol.databinding.FragmentMatrixBinding
 import com.bf.iotcontrol.view_model.ConnectionViewModel
 import com.bf.iotcontrol.view_model.MatrixViewModel
 import com.bf.iotcontrol.view_model.ResultPathFinding
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 import kotlin.math.sqrt
 
+@AndroidEntryPoint
 class MatrixFragment : Fragment() {
     private lateinit var binding: FragmentMatrixBinding
     private val connectionViewModel: ConnectionViewModel by viewModels()
@@ -85,28 +87,32 @@ class MatrixFragment : Fragment() {
                 matrixAdapter.changeData(node2, node2.row, node2.col)
 
                 var list = it.path.drop(1)
-                list = list.dropLast(1)
-//                socket = connectionViewModel.acceptConnection()
+                //list = list.dropLast(1)
+                connectionViewModel.acceptConnection()
+                socket = connectionViewModel.clientSocket()
+                var current = start
                 list.forEach { node ->
-//                    if (start.first == node.first) {
-//                        val ch = if (start.second < node.second) '1'
-//                        else '0'
-//                        controlDevice(ch)
-//                    } else {
-//                        val ch = if (start.first < node.first) 'S'
-//                        else 'D'
-//                        controlDevice(ch)
-//                    }
-//                    start = node
-//                }
-//
-//                controlDevice('S')
+                    //control
+                    if (current.first == node.first) {
+                        val ch = if (current.second < node.second) 'R'
+                       else 'L'
+                       controlDevice(ch)
+                   } else {
+                       val ch = if (current.first < current.first) 'F'
+                       else 'B'
+                        controlDevice(ch)
+                   }
+
+                    current = node
+
+                    //visualize
                     val item = recycleMatrix[node.first][node.second]
                     item.isVisited = true
                     Handler(Looper.getMainLooper()).postDelayed({
                         matrixAdapter.changeData(item, item.row, item.col)
                     }, 1000)
                 }
+                controlDevice('S')
             }
         }
 

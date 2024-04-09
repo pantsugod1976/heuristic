@@ -133,6 +133,8 @@ class BluetoothConnection {
 
     }
 
+    fun getCurrentClientSocket() = currentClientSocket
+
     fun stopConnection() = currentClientSocket?.close()
 
     fun release(context: Context) {
