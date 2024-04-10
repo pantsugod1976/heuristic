@@ -80,6 +80,11 @@ class GridAdapter(
         adapters[row].changeList(new, col)
     }
 
+    fun changeList(list: List<List<Node>>) {
+        images = list
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount() = images.size
 
     inner class ImageViewHolder(private val binding: ItemRecycleLayoutBinding) :

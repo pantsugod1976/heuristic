@@ -71,6 +71,8 @@ class MatrixFragment : Fragment() {
         }
 
         binding.btnStart.setOnClickListener {
+            recycleMatrix = matrixViewModel.createStateMatrix(matrixViewModel.matrix)
+            matrixAdapter.changeList(recycleMatrix)
             matrixViewModel.startAlgorithm()
         }
 
