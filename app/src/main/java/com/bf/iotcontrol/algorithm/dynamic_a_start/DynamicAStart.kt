@@ -11,9 +11,6 @@ class DynamicAStart(
 ) {
     private lateinit var open: PriorityQueue<Node>
     private val closed = HashSet<Node>()
-    private val incons = HashSet<Node>()
-
-    private var EPSILON = 1.0
 
     private lateinit var startNode: Node
     private lateinit var goalNode: Node
@@ -32,18 +29,15 @@ class DynamicAStart(
 
     private fun getNeighbors(node: Node): PriorityQueue<Node> {
         val neighbors = PriorityQueue(NodeComparator())
-        for (rowOffset in -1..1) {
-            for (colOffset in -1..1) {
-                if (rowOffset == 0 && colOffset == 0) continue // Skip current cell
-                val newRow = node.row + rowOffset
-                val newCol = node.col + colOffset
+        val offsets = arrayOf(intArrayOf(-1, 0), intArrayOf(1, 0), intArrayOf(0, -1), intArrayOf(0, 1))
 
-                if (isValidCell(newRow, newCol)) {
-                    val neighbor = matrix[newRow][newCol]
-                    if (neighbor.isWall || neighbor == goalNode) continue
+        for (offset in offsets) {
+            val newRow = node.row + offset[0]
+            val newCol = node.col + offset[1]
 
-                    neighbor.predecessors.clear()
-                    neighbor.predecessors.add(node)
+            if (isValidCell(newRow, newCol)) {
+                val neighbor = matrix[newRow][newCol]
+                if (!neighbor.isWall) {
                     neighbors.add(neighbor)
                 }
             }
@@ -54,159 +48,64 @@ class DynamicAStart(
     private fun initialize(start: Node, goal: Node) {
         open = PriorityQueue(NodeComparator())
 
-        start.g = Double.MAX_VALUE
-        start.rhs = Double.MAX_VALUE
-        start.h = 0.0
+        start.g = 0.0
+        start.h = heuristic(start, goal)
         startNode = start
 
-        goal.g = Double.MAX_VALUE
-        goal.h = heuristic(startNode, goal)
-        goal.rhs = 0.0
         goalNode = goal
 
-        startNode.apply {
-            key1 = if (g > rhs) {
-                min(g, rhs) + h * Node.epsilon
-            } else min(g, rhs) + h
-
-            key2 = min(g, rhs)
-        }
-
-        goalNode.apply {
-            key1 = if (g > rhs) {
-                min(g, rhs) + h * Node.epsilon
-            } else min(g, rhs) + h
-
-            key2 = min(g, rhs)
-        }
-
-
-        open.add(goal)
-
-        matrix.forEach {
-            it.forEach { node ->
-                if (!node.isWall && node != goal && node != start) {
-                    node.h = heuristic(start, node)
-                }
-            }
-        }
-
-        matrix.forEach {
-            it.forEach { node ->
-                if (!node.isWall && node != goal && node != start) {
-                    val neighbors = getNeighbors(node)
-                    if (neighbors.isNotEmpty()) node.rhs = neighbors.peek().g + 1
-                }
-            }
-        }
-
-        Node.epsilon = EPSILON
+        open.add(start)
     }
 
     private fun updateState(node: Node) {
-        if (node != goalNode) {
-            node.rhs = getNeighbors(node).peek().g + 1
-        }
+        val neighbors = getNeighbors(node)
 
-        if (node in open) open.remove(node)
+        for (neighbor in neighbors) {
+            val tentativeGScore = node.g + 1 // Assuming each step cost is 1
 
-        if (node.g != node.rhs) {
-            if (node !in closed) {
-                node.h = heuristic(startNode, node)
-                node.rhs = getNeighbors(node).peek().g + 1
-                node.key1 = if (node.g > node.rhs) {
-                    min(node.g, node.rhs) + node.h * Node.epsilon
-                } else min(node.g, node.rhs) + node.h
-                node.key2 = min(node.g, node.rhs)
-                open.add(node)
-            } else {
-                incons.add(node)
+            if (tentativeGScore < neighbor.g) {
+                neighbor.predecessors.clear()
+                neighbor.predecessors.add(node)
+                neighbor.g = tentativeGScore
+                neighbor.h = heuristic(neighbor, goalNode)
+                if (neighbor !in open) {
+                    open.add(neighbor)
+                }
             }
         }
     }
 
-    private fun computeImprovePath(): Boolean {
-        while ((open.isNotEmpty() && open.peek().compareKey(startNode) == -1) || startNode.rhs != startNode.g) {
-            val current = open.poll()
+    private fun computePath(): Boolean {
+        if (open.isEmpty()) return false
 
-            val neighbors = getNeighbors(current)
-            if (current.g > current.rhs) {
-                current.g = current.rhs
-                closed.add(current)
-                if (current == startNode) return false
+        val current = open.poll()
+        if (current == goalNode) return false
 
+        closed.add(current)
 
-            } else {
-                current.g = Double.MAX_VALUE
-                updateState(current)
+        updateState(current)
 
-            }
-
-            neighbors.forEach {
-                updateState(it)
-            }
-
-            return true
-        }
-        return false
-    }
-
-    private fun updateKey() {
-        open.forEach {
-            val node = it
-            node.h = heuristic(startNode, node)
-            node.rhs = getNeighbors(node).peek().g + 1
-            node.key1 = if (node.g > node.rhs) {
-                min(node.g, node.rhs) + node.h * Node.epsilon
-            } else min(node.g, node.rhs) + node.h
-            node.key2 = min(node.g, node.rhs)
-        }
-
-        val altOpen = PriorityQueue(NodeComparator())
-        altOpen.addAll(open)
-
-        open = altOpen
+        return true
     }
 
     fun findPath(start: Node, goal: Node): List<Node> {
         initialize(start, goal)
 
-        computeImprovePath()
-
         var continueLoop = true
         while (continueLoop) {
-            if (EPSILON > 0.1) {
-                decreaseEpsilon()
-            }
-
-            moveInconsToOpen()
-
-            updateKey()
-
-            closed.clear()
-
-            continueLoop = computeImprovePath()
+            continueLoop = computePath()
         }
 
-        var curPre = start.predecessors
-        if (curPre.isEmpty()) return emptyList()
+        // Reconstruct path
         val path = mutableListOf<Node>()
-        path.addAll(listOf(start, curPre.first()))
-        while (curPre.isNotEmpty()) {
-            curPre = curPre.first().predecessors
-            if (curPre.isNotEmpty()) path.add(curPre.first())
+        var current: Node? = goalNode
+        while (current != null && current != startNode) {
+            path.add(current)
+            current = current.predecessors.firstOrNull()
         }
+        path.add(startNode)
+        path.reverse()
+
         return path
-    }
-
-    private fun decreaseEpsilon() {
-        // Decrease epsilon
-        EPSILON -= 0.1
-        Node.epsilon = EPSILON
-    }
-
-    private fun moveInconsToOpen() {
-        open.addAll(incons)
-        incons.clear()
     }
 }

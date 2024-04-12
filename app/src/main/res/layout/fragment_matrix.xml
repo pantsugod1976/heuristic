@@ -21,7 +21,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Heuristic"
+                android:text="Thuật Toán"
                 android:textSize="18sp"
                 android:id="@+id/tvHeuristic"
                 app:layout_constraintStart_toStartOf="parent"
@@ -30,7 +30,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Location"
+                android:text="Điểm đến"
                 android:textSize="18sp"
                 android:id="@+id/tvLocation"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -75,13 +75,15 @@
             </RadioGroup>
 
             <Button
+                android:id="@+id/btnStart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/heuristicGroup"
-                android:text="Start Algorithm"
-                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="232dp"
+                android:text="Bắt đầu "
                 app:layout_constraintEnd_toEndOf="parent"
-                android:id="@+id/btnStart" />
+                app:layout_constraintHorizontal_bias="0.313"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <Spinner
                 android:layout_width="120dp"
@@ -91,12 +93,27 @@
                 android:id="@+id/spinner"/>
 
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycleView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/btnStart"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                android:layout_marginTop="28dp"
                 android:orientation="vertical"
-                android:id="@+id/recycleView" />
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btnStart" />
+
+            <Button
+                android:id="@+id/btnReset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="232dp"
+                android:text="Kết thúc"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.438"
+                app:layout_constraintStart_toEndOf="@+id/btnStart"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

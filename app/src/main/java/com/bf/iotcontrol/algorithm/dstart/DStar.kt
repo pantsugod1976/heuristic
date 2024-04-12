@@ -10,7 +10,7 @@ import kotlin.math.min
 class DStar(
     private val matrix: List<List<Node>>
 ) {
-    private val open = PriorityQueue(NodeComparator())
+    private val open = PriorityQueue<Node>(NodeComparator())
     private val close: MutableSet<Node> = HashSet()
 
     private lateinit var start: Node
@@ -30,125 +30,53 @@ class DStar(
         return row in matrix.indices && col in matrix[row].indices
     }
 
-    private fun getNeighbors(node: Node): PriorityQueue<Node> {
-        val neighbors = PriorityQueue<Node>(Comparator { o1, o2 ->
-            if((o1.g + 1) < (o2.g + 1)) return@Comparator -1 else return@Comparator 1 })
-        for (rowOffset in -1..1) {
-            val colOffset = 0
-            if (rowOffset == 0) continue // Skip current cell
-            val newRow = node.row + rowOffset
-            val newCol = node.col + colOffset
+    private fun getNeighbors(node: Node): List<Node> {
+        val neighbors = mutableListOf<Node>()
+        val offsets = arrayOf(intArrayOf(-1, 0), intArrayOf(1, 0), intArrayOf(0, -1), intArrayOf(0, 1))
+
+        for (offset in offsets) {
+            val newRow = node.row + offset[0]
+            val newCol = node.col + offset[1]
 
             if (isValidCell(newRow, newCol)) {
                 val neighbor = matrix[newRow][newCol]
-                if (neighbor.isWall) continue
-                neighbors.add(neighbor)
-            }
-        }
-
-        for (colOffset in -1..1) {
-            val rowOffset = 0
-            if (colOffset == 0) continue // Skip current cell
-            val newRow = node.row + rowOffset
-            val newCol = node.col + colOffset
-
-            if (isValidCell(newRow, newCol)) {
-                val neighbor = matrix[newRow][newCol]
-                if (neighbor.isWall) continue
-                neighbors.add(neighbor)
+                if (!neighbor.isWall) {
+                    neighbors.add(neighbor)
+                }
             }
         }
         return neighbors
     }
 
-    private fun updateKey() {
-        val altOpen = mutableListOf<Node>()
-        altOpen.addAll(open)
-//        altOpen.forEach {node ->
-//            node.key1 = min(node.g, node.rhs) + node.h
-//            node.key2 = min(node.g, node.rhs)
-//        }
-
-        open.clear()
-        open.addAll(altOpen)
-    }
-
-    private fun updateState(node: Node) {
-        if (!node.isVisited) node.g = Double.MAX_VALUE
-
-        if (node != goal) {
-            node.rhs = getNeighbors(node).peek().g + 1
-        }
-
-        if (node in open) open.remove(node)
-
-        if (node.g != node.rhs) {
-            node.key1 = min(node.g, node.rhs) + node.h
-            node.key2 = min(node.g, node.rhs)
-            open.add(node)
-        }
-    }
-
     private fun computeShortPath(): Boolean {
-        while (open.peek().compareKey(start) == -1 || start.g != start.rhs) {
-            val current = open.poll()
-            current.isVisited = true
+        if (open.isEmpty()) return false
 
-            if (current == start) return false
+        val current = open.poll()
+        current.isVisited = true
 
-            val neightbors = getNeighbors(current)
+        if (current == goal) return false
 
-            if (current.g > current.rhs) {
-                current.g = current.rhs
-            } else {
-                current.g = Double.MAX_VALUE
-                updateState(current)
+        for (neighbor in getNeighbors(current)) {
+            if (!close.contains(neighbor)) {
+                if (!open.contains(neighbor)) {
+                    neighbor.predecessors = mutableListOf(current)
+                    open.add(neighbor)
+                } else {
+                    neighbor.predecessors.add(current)
+                }
             }
-
-            neightbors.forEach {
-                updateState(it)
-            }
-
-            updateKey()
-
-            close.add(current)
-
-            return true
         }
-        return false
+
+        close.add(current)
+
+        return true
     }
 
     private fun initialize(start: Node, goal: Node) {
-        //g: from s to goal
-        start.g = Double.MAX_VALUE
-        start.h = 0.0
-        start.rhs = Double.MAX_VALUE
         this.start = start
-
-        goal.g = Double.MAX_VALUE
-        goal.h = heuristic(start, goal)
-        goal.rhs = 0.0
         this.goal = goal
 
-        open.add(goal)
-
-        matrix.forEach {
-            it.all { node ->
-                node.h = heuristic(start, node)
-                if (!node.isWall && node != goal && node != start) {
-                    node.g = 0.0
-                    node.key1 = min(node.g, node.rhs) + node.h
-                    node.key2 = min(node.g, node.rhs)
-                }
-                true
-            }
-        }
-
-        this.start.key1 = min(this.start.g, this.start.rhs) + this.start.h
-        this.start.key2 = min(this.start.g, this.start.rhs)
-
-        this.goal.key1 = min(this.goal.g, this.goal.rhs) + this.goal.h
-        this.goal.key2 = min(this.goal.g, this.goal.rhs)
+        open.add(start)
     }
 
     fun findPath(start: Node, goal: Node): List<Node> {
@@ -160,13 +88,16 @@ class DStar(
             Log.d("LOOP", "CONTINUE")
         }
         Log.d("LOOP", "End Loop")
-        var curPre = start.predecessors
-        if (curPre.isEmpty()) return emptyList()
-        path.addAll(listOf(start, curPre.first()))
-        while (curPre.isNotEmpty()) {
-            curPre = curPre.first().predecessors
-            if (curPre.isNotEmpty()) path.add(curPre.first())
+
+        // Reconstruct path
+        var current: Node? = goal
+        while (current != null && current != start) {
+            path.add(current)
+            current = current.predecessors.firstOrNull()
         }
+        path.add(start)
+        path.reverse()
+
         return path
     }
 }
