@@ -57,6 +57,12 @@ class MatrixFragment : Fragment() {
 
         binding.viewModel = matrixViewModel
 
+        binding.btnReset.setOnClickListener {
+            recycleMatrix = matrixViewModel.createStateMatrix(matrixViewModel.matrix)
+        }
+
+        controlDevice('S')
+
         val adapter = ArrayAdapter(this.requireContext(), android.R.layout.simple_spinner_item, matrixViewModel.getAvailableLocation())
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinner.adapter = adapter
@@ -94,20 +100,126 @@ class MatrixFragment : Fragment() {
                 connectionViewModel.acceptConnection()
                 socket = connectionViewModel.clientSocket()
                 var current = start
+
+                //hướng đầu xe theo matrix
+                // 0: Mặc định trái sang phải
+                // 1: Oy tăng hướng lên trên
+                // -1: Oy giảm hướng xuống dưới
+                // 2: Ox giảm hướng phải sang trái
+                var head = 0
+                val leftDelayTime = 1200L
+                val rightDelayTime = 1400L
+                var delayTime = rightDelayTime
                 lifecycleScope.launch {
                     for (node in list) {
-                        delay(5000)
-                        //control
-                        if (current.first == node.first) {
-                            val ch = if (current.second < node.second) 'R'
-                            else 'L'
-                            controlDevice(ch)
-                        } else {
-                            val ch = if (current.first < current.first) 'F'
-                            else 'B'
-                            controlDevice(ch)
-                        }
+                        delay(2000)
+                        //control phải cập nhật theo đầu xe quay hướng nào =))
+                        when(head) {
+                            0 -> {
+                                if (current.first == node.first) {
+                                    // y1 < y2 ? L : R
+                                    //cập nhật lại head
+                                    val ch = if (current.second < node.second) {
+                                        head = 1
+                                        delayTime = leftDelayTime
+                                        'R'
+                                    }
+                                    else {
+                                        head = -1
+                                        delayTime = rightDelayTime
+                                        'L'
+                                    }
+                                    controlDevice(ch)
+                                    delay(delayTime)
+                                    controlDevice('F')
+                                } else {
 
+                                    val ch = if (current.first < current.first) 'F'
+                                    else 'F'
+                                    controlDevice(ch)
+                                }
+                            }
+
+                            -1 -> {
+                                if (current.second == node.second) {
+                                    //x1 < x2 ? L : R
+                                    val ch = if (current.first < node.first) {
+                                        head = 0
+                                        delayTime = leftDelayTime
+                                        'R'
+                                    }
+                                    else {
+                                        head = 2
+                                        delayTime = rightDelayTime
+                                        'L'
+                                    }
+                                    controlDevice(ch)
+                                    delay(delayTime)
+                                    controlDevice('F')
+                                } else {
+                                    val ch = if (current.second < node.second) {
+                                        'F'
+                                    }
+                                    else {
+                                        'F'
+                                    }
+                                    controlDevice(ch)
+                                }
+                            }
+
+                            1 -> {
+                                if (current.second == node.second) {
+                                    //x1 < x2 ? R : L
+                                    val ch = if (current.first < node.first) {
+                                        head = 0
+                                        delayTime = rightDelayTime
+                                        'L'
+                                    }
+                                    else {
+                                        head = 2
+                                        delayTime = leftDelayTime
+                                        'R'
+                                    }
+                                    controlDevice(ch)
+                                    delay(delayTime)
+                                    controlDevice('F')
+                                } else {
+                                    val ch = if (current.second < node.second) {
+                                        'F'
+                                    }
+                                    else {
+                                        'F'
+                                    }
+                                    controlDevice(ch)
+                                }
+                            }
+
+                            2 -> {
+                                if (current.first == node.first) {
+                                    // y1 < y2 ? R : L
+                                    //cập nhật lại head
+                                    val ch = if (current.second < node.second) {
+                                        head = 1
+                                        delayTime = rightDelayTime
+                                        'L'
+                                    }
+                                    else {
+                                        head = -1
+                                        delayTime = leftDelayTime
+                                        'R'
+                                    }
+                                    controlDevice(ch)
+                                    delay(delayTime)
+                                    controlDevice('F')
+                                } else {
+                                    //tiến lùi không cần cập nhật trừ khi thằng loz để lùi là quay đầu xe xoas ddi dme m =))
+
+                                    val ch = if (current.first < current.first) 'F'
+                                    else 'F'
+                                    controlDevice(ch)
+                                }
+                            }
+                        }
                         current = node
 
                         //visualize

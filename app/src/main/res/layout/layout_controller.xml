@@ -11,6 +11,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:text="Up"
+        android:visibility="gone"
         android:backgroundTint="@color/black"
         android:id="@+id/btnUp"/>
 
@@ -20,6 +21,7 @@
         app:layout_constraintTop_toBottomOf="@id/btnUp"
         android:backgroundTint="@color/black"
         android:text="Left"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         android:id="@+id/btnLeft"/>
 
@@ -29,6 +31,7 @@
         app:layout_constraintTop_toBottomOf="@id/btnUp"
         android:backgroundTint="@color/black"
         android:text="Right"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         android:id="@+id/btnRight"/>
 
@@ -37,6 +40,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/black"
         android:text="Down"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/btnLeft"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
